@@ -27,7 +27,8 @@ export const plugin = {
 // ── State ─────────────────────────────────────────────────────────────────────
 
 const cfg = {
-  url: "",
+  internalUrl: "",
+  publicUrl: "",
   apiKey: "",
   panelEnabled: true,
   limit: 5,
@@ -50,7 +51,7 @@ const SKIP_TTL = 60_000;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const _isConfigured = () => Boolean(cfg.url);
+const _isConfigured = () => Boolean(cfg.internalUrl && cfg.publicUrl);
 
 // Degoog stores toggles as the string "false", and Boolean("false") is true.
 const _bool = (v) => (v === true || v === "true" ? true : v === false || v === "false" ? false : Boolean(v));
@@ -66,7 +67,7 @@ const _esc = (s) =>
     .replace(/"/g, "&quot;");
 
 function _headers() {
-  const h = { Accept: "application/json", Origin: cfg.url };
+  const h = { Accept: "application/json", Origin: cfg.internalUrl };
   if (cfg.apiKey) {
     h["Authorization"] = `Bearer ${cfg.apiKey}`;
     h["X-Access-Token"] = cfg.apiKey;
@@ -88,7 +89,7 @@ async function _search(query, contextFetch, limit) {
   const payload = { text: query, include_text: true };
   if (limit) payload.limit = limit;
   const res = await doFetch(
-    `${cfg.url}/search?query=${encodeURIComponent(JSON.stringify(payload))}`,
+    `${cfg.internalUrl}/search?query=${encodeURIComponent(JSON.stringify(payload))}`,
     { headers: _headers() },
   );
 
@@ -171,13 +172,24 @@ export const slot = {
 
   settingsSchema: [
     {
-      key: "url",
-      label: "Hister instance URL",
+      key: "internalUrl",
+      label: "Hister internal URL",
+      type: "url",
+      required: true,
+      fieldset: "Connection",
+      placeholder: "http://hister:4433",
+      description:
+        "URL Degoog uses to communicate with Hister. This can be a private or container-network address.",
+    },
+    {
+      key: "publicUrl",
+      label: "Hister public URL",
       type: "url",
       required: true,
       fieldset: "Connection",
       placeholder: "https://hister.example.com",
-      description: "Base URL of your Hister instance, with no trailing slash.",
+      description:
+        "URL your browser uses to open Hister. This must be reachable from your device.",
     },
     {
       key: "apiKey",
@@ -258,7 +270,8 @@ export const slot = {
   ],
 
   configure(settings) {
-    cfg.url = (settings.url || "").replace(/\/$/, "");
+    cfg.internalUrl = (settings.internalUrl || "").replace(/\/$/, "");
+    cfg.publicUrl = (settings.publicUrl || "").replace(/\/$/, "");
     cfg.apiKey = settings.apiKey || "";
     cfg.panelEnabled =
       settings.panelEnabled === undefined ? true : _bool(settings.panelEnabled);
@@ -301,7 +314,7 @@ export const slot = {
     const displayed = results.slice(0, cfg.limit);
     if (!displayed.length) return { html: "" };
 
-    const viewAll = `${cfg.url}/?q=${encodeURIComponent(q)}`;
+    const viewAll = `${cfg.publicUrl}/?q=${encodeURIComponent(q)}`;
     const items = displayed.map(_renderResult).join("");
 
     // Only shown once Hister First actually redirected, so the user can opt out
