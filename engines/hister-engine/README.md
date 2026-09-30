@@ -17,8 +17,13 @@ In **Settings > Engines > Hister**.
 
 | Setting | Description | Default |
 |---|---|---|
-| Hister instance URL | Base URL, for example `https://hister.example.com`, no trailing slash | *(required)* |
+| Hister internal URL | Base URL Degoog uses server-side, for example `http://hister:4433`, no trailing slash | *(required)* |
+| Hister public URL | Base URL your browser uses, for example `https://hister.example.com`, no trailing slash. Leave empty to reuse the internal URL | *(optional)* |
 | API key | Your Access Token, from **Hister > Profile > Access Token**. Only needed if your instance uses authentication | *(optional)* |
+
+The engine queries Hister server-side, so **Hister internal URL** is the address Degoog can reach. **Hister public URL** is only needed when the browser and the server reach Hister at different addresses; leave it empty and the internal URL is used for both.
+
+Hister checks the `Origin` header as well as the token. The engine sends the public URL (or the internal one when no public URL is set) as `Origin`, so pointing it at the internal address makes Hister log `Invalid origin` and answer `500` once the request is authenticated, and a missing or stale token gets `403`.
 
 ## Choosing which tabs it feeds
 
